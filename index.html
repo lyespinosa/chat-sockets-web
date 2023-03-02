@@ -1,0 +1,165 @@
+<html>
+
+<head>
+  <title>Socket.IO chat</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 3rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #form {
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.25rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      height: 3rem;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+
+    #input {
+      border: none;
+      padding: 0 1rem;
+      flex-grow: 1;
+      border-radius: 2rem;
+      margin: 0.25rem;
+    }
+
+    #input:focus {
+      outline: none;
+    }
+
+    #form>button {
+      background: #333;
+      border: none;
+      padding: 0 1rem;
+      margin: 0.25rem;
+      border-radius: 3px;
+      outline: none;
+      color: #fff;
+    }
+
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    #messages>li {
+      background-color: rgb(0, 117, 121);
+      padding: 0.5rem 1rem;
+      width: 300px;
+      border-radius: 20px;
+      border-top-left-radius: 0px;
+      margin-bottom: 10px;
+      margin-left: 10px;
+      color: white;
+    }
+
+    #messages>li:nth-child(1) {
+      background: #efefef;
+      width: 100%;
+      border-radius: 0;
+      color: black;
+      margin: 0;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="input" autocomplete="off" />
+    <input id="image" type="file" accept="image/*">
+    <button>Send</button>
+  </form>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+  var socket = io('/admin');
+
+  const messages = document.getElementById('messages');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const imageInput = document.getElementById('image');
+  let name;
+
+  Swal.fire({
+    title: 'Ingresa tu nombre de usuario',
+    content: "input",
+    input: 'text',
+    allowOutsideClick: false,
+    customClass: {
+      validationMessage: 'my-validation-message'
+    },
+    preConfirm: (value) => {
+      if (!value) {
+        Swal.showValidationMessage(
+          '<i class="fa fa-info-circle"></i> Your name is required'
+        )
+      }
+    }
+  })
+  .then((value) => {
+      name = value.value;
+    });
+
+  const room = 'global chat';
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (input.value || imageInput.files[0]) {
+
+      if (imageInput.files[0]) {
+        const file = imageInput.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          socket.emit('chat message', input.value, e.target.result, room, name);
+        };
+        reader.readAsDataURL(file);
+        imageInput.value = '';
+      }
+      else {
+        socket.emit('chat message', input.value, null, room, name);
+        input.value = '';
+      }
+    }
+
+  });
+
+  socket.on('chat message', function (msg, image) {
+    const li = document.createElement('li');
+    const p = document.createElement('p');
+    const img = document.createElement('img');
+
+    p.textContent = msg;
+    li.appendChild(p);
+
+    if (image != null && image != undefined) {
+      img.src = image;
+      img.style.width = "200px";
+      li.appendChild(img);
+
+    }
+
+    messages.appendChild(li);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+
+  socket.on('connect', () => {
+    socket.emit('join', { room, name });
+  })
+
+</script>
+
+</html>
