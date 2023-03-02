@@ -1,7 +1,7 @@
 <html>
 
 <head>
-  <title>Socket.IO chat</title>
+  <title>Chat Web</title>
   <style>
     body {
       margin: 0;
@@ -11,7 +11,6 @@
 
     #form {
       background: rgba(0, 0, 0, 0.15);
-      padding: 0.25rem;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -20,6 +19,7 @@
       height: 3rem;
       box-sizing: border-box;
       backdrop-filter: blur(10px);
+      margin: 0;
     }
 
     #input {
@@ -61,13 +61,23 @@
       color: white;
     }
 
-    #messages>li:nth-child(1) {
-      background: #efefef;
+    #messages>div {
+      height: 50px;
+      display: flex;
+      justify-content: center;
       width: 100%;
       border-radius: 0;
-      color: black;
+      color: rgb(0, 27, 179);
       margin: 0;
       margin-bottom: 20px;
+    }
+
+    #image {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #c4c4c4;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -92,7 +102,12 @@
   const form = document.getElementById('form');
   const input = document.getElementById('input');
   const imageInput = document.getElementById('image');
-  let name;
+  const room = 'global chat';
+  let aceptUser = false;
+
+
+
+
 
   Swal.fire({
     title: 'Ingresa tu nombre de usuario',
@@ -109,12 +124,13 @@
         )
       }
     }
-  })
-  .then((value) => {
-      name = value.value;
-    });
+  }).then((value) => {
+    name = value.value;
+    socket.emit('join', { room, name });
 
-  const room = 'global chat';
+  })
+
+
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -128,6 +144,7 @@
         };
         reader.readAsDataURL(file);
         imageInput.value = '';
+        input.value = '';
       }
       else {
         socket.emit('chat message', input.value, null, room, name);
@@ -156,9 +173,46 @@
     window.scrollTo(0, document.body.scrollHeight);
   });
 
-  socket.on('connect', () => {
+  socket.on('user joined', function (msg) {
+    const div = document.createElement('div');
+    const p = document.createElement('p');
+
+
+    p.textContent = msg;
+    div.appendChild(p);
+
+    messages.appendChild(div);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+
+  socket.on('change username', () => {
+    Swal.fire({
+    title: 'Ese usuario ya está en uso',
+    content: "input",
+    input: 'text',
+    allowOutsideClick: false,
+    customClass: {
+      validationMessage: 'my-validation-message'
+    },
+    preConfirm: (value) => {
+      if (!value) {
+        Swal.showValidationMessage(
+          '<i class="fa fa-info-circle"></i> Your name is required'
+        )
+      }
+    }
+  }).then((value) => {
+    name = value.value;
     socket.emit('join', { room, name });
+
   })
+  })
+
+
+  /*socket.on('connect', () => {
+    socket.emit('join', { room, name });
+  })*/
+
 
 </script>
 

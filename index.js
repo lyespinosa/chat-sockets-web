@@ -9,16 +9,24 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-const users = new Map();
+let users = [];
 
 const adminNameSpace = io.of('/admin');
 adminNameSpace.on('connection', (socket) => {
 
   socket.on('join', (data) => {
     socket.join(data.room);
-    adminNameSpace.in(data.room).emit('chat message', `New user joined the ${data.room} room`);
-    console.log("El socket - " + JSON.stringify(socket.id) + data.name)
-    users.values();
+    socket.username = data.name
+    if (users.includes(data.name) != true) {
+      console.log(`Username ${socket.username} se ha conectado desde ${socket.handshake.address}`);
+      console.log("El socket - " + JSON.stringify(socket.id) + socket.username)
+      adminNameSpace.in(data.room).emit('user joined', `${data.name} se ha unido al chat`);
+      users.push(socket.username)
+    } else {
+      console.log("este usuario ya existe")
+      adminNameSpace.to(socket.id).emit('change username',);
+    }
+
   })
 
   socket.on('chat message', (msg, image, room, name) => {
@@ -26,21 +34,20 @@ adminNameSpace.on('connection', (socket) => {
     adminNameSpace.in(room).emit('chat message', name + ": " + msg, image);
   });
 
-socket.on('user image', (data) => {
-  adminNameSpace.in(data.room).emit('addimage', "Imagen compartida: " + data);
+
+  socket.on('disconnect', (data) => {
+    users = users.filter((item) => item !== socket.username);
+    console.log('user deleted - ' + socket.username);
+
+  });
+
+
+
 });
 
-socket.on('disconnect', () => {
-  console.log('user disconnected');
-});
 
 
 
-});
-
-
-
-
-server.listen(3001, () => {
-  console.log('listening on *:3001');
+server.listen(4000, () => {
+  console.log('listening on *:4000');
 });
