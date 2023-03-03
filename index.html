@@ -108,8 +108,7 @@
 
 
 
-
-  Swal.fire({
+  /*Swal.fire({
     title: 'Ingresa tu nombre de usuario',
     content: "input",
     input: 'text',
@@ -126,39 +125,71 @@
     }
   }).then((value) => {
     name = value.value;
+   
+  })*/
+
+    var name = prompt("Ingresa tu nombre de usuario");
     socket.emit('join', { room, name });
 
-  })
 
 
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (input.value || imageInput.files[0]) {
 
-      if (imageInput.files[0]) {
+    if (imageInput.files[0]) {
+
+      if (input.value.substring(0, 1) === '@') {
+        var zero = input.value.indexOf(' ', 0);
+        var sendBy;
+        if (zero == -1) {
+          sendBy = input.value.substring(1);
+        }
+        else {
+          sendBy = input.value.substring(1, zero);
+        }
+        const file = imageInput.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          socket.emit('private message', input.value, e.target.result, room, name, name, sendBy);
+        };
+        reader.readAsDataURL(file);
+
+      } else {
+
         const file = imageInput.files[0];
         const reader = new FileReader();
         reader.onload = (e) => {
           socket.emit('chat message', input.value, e.target.result, room, name);
         };
         reader.readAsDataURL(file);
-        imageInput.value = '';
-        input.value = '';
+      }
+
+    }
+    else if (input.value) {
+
+      if (input.value.substring(0, 1) === '@') {
+        var zero = input.value.indexOf(' ', 0);
+        var sendBy;
+        if (zero == -1) {
+          sendBy = input.value.substring(1);
+        }
+        else {
+          sendBy = input.value.substring(1, zero);
+        }
+        socket.emit('private message', input.value, null, room, name, sendBy);
       }
       else {
         socket.emit('chat message', input.value, null, room, name);
-        input.value = '';
+
       }
     }
-
   });
 
   socket.on('chat message', function (msg, image) {
     const li = document.createElement('li');
     const p = document.createElement('p');
     const img = document.createElement('img');
-
     p.textContent = msg;
     li.appendChild(p);
 
@@ -171,6 +202,31 @@
 
     messages.appendChild(li);
     window.scrollTo(0, document.body.scrollHeight);
+    imageInput.value = '';
+    input.value = '';
+  });
+
+
+  socket.on('private message', function (msg, image, sendTo, sendBy) {
+    if (sendBy == name || sendTo == name) {
+      const li = document.createElement('li');
+      const p = document.createElement('p');
+      const img = document.createElement('img');
+      p.textContent = msg;
+      li.appendChild(p);
+
+      if (image != null && image != undefined) {
+        img.src = image;
+        img.style.width = "200px";
+        li.appendChild(img);
+
+      }
+
+      messages.appendChild(li);
+      window.scrollTo(0, document.body.scrollHeight);
+      imageInput.value = '';
+      input.value = '';
+    }
   });
 
   socket.on('user joined', function (msg) {
@@ -186,26 +242,31 @@
   });
 
   socket.on('change username', () => {
-    Swal.fire({
-    title: 'Ese usuario ya está en uso',
-    content: "input",
-    input: 'text',
-    allowOutsideClick: false,
-    customClass: {
-      validationMessage: 'my-validation-message'
-    },
-    preConfirm: (value) => {
-      if (!value) {
-        Swal.showValidationMessage(
-          '<i class="fa fa-info-circle"></i> Your name is required'
-        )
+    /*Swal.fire({
+      title: 'Ese usuario ya está en uso',
+      content: "input",
+      input: 'text',
+      allowOutsideClick: false,
+      customClass: {
+        validationMessage: 'my-validation-message'
+      },
+      preConfirm: (value) => {
+        if (!value) {
+          Swal.showValidationMessage(
+            '<i class="fa fa-info-circle"></i> Your name is required'
+          )
+        }
       }
-    }
-  }).then((value) => {
-    name = value.value;
+    }).then((value) => {
+      name = value.value;
+      socket.emit('join', { room, name });
+
+    })*/
+
+    name = prompt("Este ya está en uso");
+
     socket.emit('join', { room, name });
 
-  })
   })
 
 

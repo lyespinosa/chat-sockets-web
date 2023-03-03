@@ -34,6 +34,11 @@ adminNameSpace.on('connection', (socket) => {
     adminNameSpace.in(room).emit('chat message', name + ": " + msg, image);
   });
 
+  socket.on('private message', (msg, image, room, name, sendBy) => {
+    console.log('message: ' + JSON.stringify(name) + ": " + msg);
+    adminNameSpace.in(room).emit('private message', name + " [Privado] : " + msg, image, name, sendBy);
+  });
+
 
   socket.on('disconnect', (data) => {
     users = users.filter((item) => item !== socket.username);
