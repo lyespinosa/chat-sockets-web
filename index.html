@@ -5,7 +5,7 @@
   <style>
     body {
       margin: 0;
-      padding-bottom: 3rem;
+      margin-bottom: 3rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
@@ -96,19 +96,17 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 
-  var socket = io('/admin');
+  var socket = io();
 
   const messages = document.getElementById('messages');
   const form = document.getElementById('form');
   const input = document.getElementById('input');
   const imageInput = document.getElementById('image');
-  const room = 'global chat';
   let aceptUser = false;
+  var name;
 
 
-
-
-  /*Swal.fire({
+  Swal.fire({
     title: 'Ingresa tu nombre de usuario',
     content: "input",
     input: 'text',
@@ -125,11 +123,10 @@
     }
   }).then((value) => {
     name = value.value;
-   
-  })*/
+    socket.emit('join', { name });
 
-    var name = prompt("Ingresa tu nombre de usuario");
-    socket.emit('join', { room, name });
+  })
+
 
 
 
@@ -151,7 +148,17 @@
         const file = imageInput.files[0];
         const reader = new FileReader();
         reader.onload = (e) => {
-          socket.emit('private message', input.value, e.target.result, room, name, name, sendBy);
+          if (name != sendBy) {
+            socket.emit('private message', input.value, e.target.result, name, sendBy);
+          }
+          else {
+            Swal.fire({
+              icon: 'error',
+              title: 'No puedes mandarte un mensaje a ti mismo'
+            })
+            imageInput.value = '';
+            input.value = '';
+          }
         };
         reader.readAsDataURL(file);
 
@@ -160,7 +167,7 @@
         const file = imageInput.files[0];
         const reader = new FileReader();
         reader.onload = (e) => {
-          socket.emit('chat message', input.value, e.target.result, room, name);
+          socket.emit('chat message', input.value, e.target.result, name);
         };
         reader.readAsDataURL(file);
       }
@@ -177,10 +184,19 @@
         else {
           sendBy = input.value.substring(1, zero);
         }
-        socket.emit('private message', input.value, null, room, name, sendBy);
+        if (name != sendBy) {
+          socket.emit('private message', input.value, null, name, sendBy);
+        }
+        else {
+          Swal.fire({
+            icon: 'error',
+            title: 'No puedes mandarte un mensaje a ti mismo'
+          })
+          input.value = '';
+        }
       }
       else {
-        socket.emit('chat message', input.value, null, room, name);
+        socket.emit('chat message', input.value, null, name);
 
       }
     }
@@ -229,7 +245,7 @@
     }
   });
 
-  socket.on('user joined', function (msg) {
+  socket.on('server message', function (msg) {
     const div = document.createElement('div');
     const p = document.createElement('p');
 
@@ -242,7 +258,7 @@
   });
 
   socket.on('change username', () => {
-    /*Swal.fire({
+    Swal.fire({
       title: 'Ese usuario ya está en uso',
       content: "input",
       input: 'text',
@@ -259,20 +275,13 @@
       }
     }).then((value) => {
       name = value.value;
-      socket.emit('join', { room, name });
+      socket.emit('join', { name });
 
-    })*/
-
-    name = prompt("Este ya está en uso");
-
-    socket.emit('join', { room, name });
+    })
 
   })
 
-
-  /*socket.on('connect', () => {
-    socket.emit('join', { room, name });
-  })*/
+  
 
 
 </script>
