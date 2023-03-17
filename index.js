@@ -11,9 +11,11 @@ app.get('/', (req, res) => {
 
 let users = [];
 
+
+
 io.on('connection', (socket) => {
 
-  socket.on('join', (data) => {
+  socket.on('join', (data) => {h
     socket.username = data.name
     if (users.includes(data.name) != true) {
       console.log(`Username ${socket.username} se ha conectado desde ${socket.handshake.address}`);
